@@ -1,1 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>퀴즈메이트 (QuizMate) - 시험 대비 퀴즈 생성기</title>
+  <!-- Google Fonts 로드: 깔끔하고 현대적인 서체 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- 외부 라이브러리 없이 자체 스타일시트 연결 -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 헤더 영역 -->
+    <header class="main-header">
+      <div class="logo-area">
+        <span class="logo-icon">⚡</span>
+        <h1 class="logo-text">퀴즈메이트 <span class="logo-sub">QuizMate</span></h1>
+      </div>
+      <p class="header-desc">강의자료나 학습 노트를 붙여넣으면 나만의 시험 대비 퀴즈가 즉석에서 생성됩니다!</p>
+    </header>
+    <main class="main-content">
+      <!-- 1단계: 학습 내용 입력 및 설정 카드 -->
+      <section id="config-section" class="card active">
+        <div class="card-header">
+          <h2>📝 학습 정보 입력</h2>
+          <span class="step-badge">1단계</span>
+        </div>
+        <div class="card-body">
+          <form id="quiz-config-form" onsubmit="event.preventDefault();">
+            <!-- 과목명 입력 -->
+            <div class="form-group">
+              <label for="subject-name">과목명 <span class="required">*</span></label>
+              <input type="text" id="subject-name" placeholder="예: 웹프로그래밍, 운영체제, 한국사" required max="40">
+            </div>
+            <!-- 학습 내용 입력 -->
+            <div class="form-group">
+              <div class="label-wrapper">
+                <label for="study-notes">학습 내용 (강의자료 텍스트) <span class="required">*</span></label>
+                <span id="char-counter" class="helper-text">0자</span>
+              </div>
+              <textarea id="study-notes" placeholder="이곳에 학습 내용이나 강의 노트를 붙여넣으세요. 입력된 문장들을 분석하여 퀴즈가 생성됩니다. (최소 3개 이상의 문장 입력을 권장합니다. 예: '대한민국의 수도는 서울이다. HTML은 웹페이지의 구조를 정의하는 마크업 언어이다. 자바스크립트는 웹 브라우저에서 동적으로 동작하는 프로그래밍 언어이다.')" required></textarea>
+            </div>
+            <!-- 설정 영역 (문제 유형 & 문제 수) -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="quiz-type">문제 유형 <span class="required">*</span></label>
+                <div class="custom-select-wrapper">
+                  <select id="quiz-type" required>
+                    <option value="mixed" selected>혼합형 (객관식 + OX + 빈칸)</option>
+                    <option value="choice">객관식 (4지선다)</option>
+                    <option value="ox">OX 진위형</option>
+                    <option value="blank">빈칸 주관식</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="question-count">문제 수 <span class="required">*</span></label>
+                <div class="custom-select-wrapper">
+                  <select id="question-count" required>
+                    <option value="3" selected>3문제</option>
+                    <option value="5">5문제</option>
+                    <option value="10">10문제</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <!-- 퀴즈 생성 버튼 -->
+            <button type="button" id="generate-btn" class="btn btn-primary btn-block">
+              <span>🚀 퀴즈 생성하기</span>
+            </button>
+          </form>
+        </div>
+      </section>
+      <!-- 2단계: 퀴즈 풀이 영역 (처음엔 숨김) -->
+      <section id="quiz-section" class="card">
+        <div class="card-header quiz-header-flex">
+          <div class="quiz-info">
+            <span id="quiz-subject-badge" class="subject-badge">과목명</span>
+            <h2 id="question-number">문제 1 / 5</h2>
+          </div>
+          <span class="step-badge play-badge">진행중</span>
+        </div>
+        
+        <!-- 진행률 표시줄 -->
+        <div class="progress-container">
+          <div id="quiz-progress-bar" class="progress-bar" style="width: 0%;"></div>
+        </div>
+        <div class="card-body">
+          <!-- 문제 표시 -->
+          <div class="question-container">
+            <div class="question-type-indicator">
+              <span id="question-type-text" class="type-badge">객관식</span>
+            </div>
+            <p id="question-text" class="question-text">문제가 여기에 표시됩니다.</p>
+          </div>
+          <!-- 답변 영역 (객관식) -->
+          <div id="choice-answers-area" class="answers-area">
+            <div class="choice-grid">
+              <button type="button" class="choice-btn" data-index="0">
+                <span class="choice-num">1</span>
+                <span class="choice-text">보기 1</span>
+              </button>
+              <button type="button" class="choice-btn" data-index="1">
+                <span class="choice-num">2</span>
+                <span class="choice-text">보기 2</span>
+              </button>
+              <button type="button" class="choice-btn" data-index="2">
+                <span class="choice-num">3</span>
+                <span class="choice-text">보기 3</span>
+              </button>
+              <button type="button" class="choice-btn" data-index="3">
+                <span class="choice-num">4</span>
+                <span class="choice-text">보기 4</span>
+              </button>
+            </div>
+          </div>
+          <!-- 답변 영역 (OX) -->
+          <div id="ox-answers-area" class="answers-area" style="display: none;">
+            <div class="ox-grid">
+              <button type="button" class="ox-btn btn-o" data-value="O">
+                <span class="ox-icon">⭕</span>
+                <span class="ox-text">참 (O)</span>
+              </button>
+              <button type="button" class="ox-btn btn-x" data-value="X">
+                <span class="ox-icon">❌</span>
+                <span class="ox-text">거짓 (X)</span>
+              </button>
+            </div>
+          </div>
+          <!-- 답변 영역 (빈칸 주관식) -->
+          <div id="blank-answers-area" class="answers-area" style="display: none;">
+            <div class="blank-input-group">
+              <input type="text" id="blank-input" placeholder="정답을 입력하세요 (영문 대소문자 및 띄어쓰기 구분 없음)" autocomplete="off">
+              <button type="button" id="submit-blank-btn" class="btn btn-indigo">제출하기</button>
+            </div>
+          </div>
+          <!-- 피드백 및 해설 영역 (제출 후에만 표시) -->
+          <div id="feedback-panel" class="feedback-panel" style="display: none;">
+            <div class="feedback-status">
+              <span id="feedback-icon">🎉</span>
+              <span id="feedback-title">정답입니다!</span>
+            </div>
+            <div class="feedback-content">
+              <p class="user-answer-summary">내가 선택한 답: <strong id="feedback-user-ans">-</strong></p>
+              <p class="correct-answer-summary">실제 정답: <strong id="feedback-correct-ans">-</strong></p>
+              <div class="explanation-box">
+                <span class="explanation-label">💡 설명 및 출처 문장</span>
+                <p id="feedback-explanation">원래 문장이 여기에 표시됩니다.</p>
+              </div>
+            </div>
+            <button type="button" id="next-btn" class="btn btn-primary float-right">
+              <span id="next-btn-text">다음 문제</span> ➡️
+            </button>
+          </div>
+        </div>
+      </section>
+      <!-- 3단계: 결과 확인 영역 (처음엔 숨김) -->
+      <section id="result-section" class="card">
+        <div class="card-header">
+          <h2>📊 학습 결과 리포트</h2>
+          <span class="step-badge result-badge">완료</span>
+        </div>
+        <div class="card-body text-center">
+          <div class="result-summary-circle">
+            <div class="circle-inner">
+              <span id="result-percentage">100%</span>
+              <span class="circle-label">정답률</span>
+            </div>
+          </div>
+          
+          <h3 id="result-score-message" class="result-message">훌륭합니다! 개념을 마스터하셨네요.</h3>
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-num" id="stat-total">5</span>
+              <span class="stat-label">총 문제 수</span>
+            </div>
+            <div class="stat-card correct-stat">
+              <span class="stat-num" id="stat-correct">5</span>
+              <span class="stat-label">맞힌 문제</span>
+            </div>
+            <div class="stat-card wrong-stat">
+              <span class="stat-num" id="stat-wrong">0</span>
+              <span class="stat-label">틀린 문제</span>
+            </div>
+            <div class="stat-card score-stat">
+              <span class="stat-num" id="stat-points">100점</span>
+              <span class="stat-label">획득 점수</span>
+            </div>
+          </div>
+          <div class="result-buttons">
+            <button type="button" id="restart-btn" class="btn btn-secondary">
+              🔄 이 텍스트로 다시 풀기
+            </button>
+            <button type="button" id="new-quiz-btn" class="btn btn-primary">
+              ✏️ 새 퀴즈 만들기
+            </button>
+          </div>
+        </div>
+      </section>
+      <!-- 4단계: 오답노트 영역 (항상 노출되어 있으며 LocalStorage와 동기화됨) -->
+      <section id="wrong-answers-section" class="card">
+        <div class="card-header wrong-answers-header">
+          <div class="header-left">
+            <h2>📖 나만의 오답노트</h2>
+            <span id="wrong-count-badge" class="count-badge">0</span>
+          </div>
+          <div class="header-right">
+            <!-- 과목별 필터 -->
+            <select id="filter-subject" class="filter-select">
+              <option value="all">모든 과목 보기</option>
+            </select>
+            <!-- 전체 삭제 버튼 -->
+            <button type="button" id="clear-all-wrong-btn" class="btn btn-danger btn-sm">
+              🗑️ 전체 삭제
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <p class="wrong-section-desc">퀴즈에서 틀린 문제는 이곳에 자동으로 저장되며 브라우저에 보존됩니다.</p>
+          
+          <!-- 오답 목록 컨테이너 -->
+          <div id="wrong-list-container" class="wrong-list">
+            <!-- JavaScript가 여기에 항목들을 동적으로 렌더링함 -->
+            <div class="empty-state">
+              <span class="empty-icon">🎉</span>
+              <p>오답노트가 비어 있습니다! 모든 문제를 맞혀 보세요.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <!-- 푸터 영역 -->
+    <footer class="main-footer">
+      <p>&copy; 2026 퀴즈메이트(QuizMate). All Rights Reserved.</p>
+      <p class="footer-note">이 웹사이트는 브라우저 내부 메모리(LocalStorage)만 사용하며, 개인 데이터를 수집하거나 외부로 전송하지 않습니다.</p>
+    </footer>
+  </div>
+  <!-- 서비스 메인 로직 스크립트 연결 -->
+  <script src="script.js"></script>
+</body>
+</html>
 
